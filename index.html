@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Ctrl+Learn — after-school IT lessons across North London. Ten subjects, five seats each.">
+    <title>Ctrl+Learn</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233A5BFF'/%3E%3Ctext x='32' y='44' font-size='34' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'%3E%E2%8C%83%3C/text%3E%3C/svg%3E">
+    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="lessons.js"></script>
+</head>
+<body>
+<div id="app" v-bind:class="{ dark: darkMode }">
+    <header class="site-header">
+        <div class="sky" v-if="showLessons">
+            <span class="twinkle" v-for="n in 30" v-bind:key="n"></span>
+        </div>
+        <div class="container nav-bar">
+            <a href="#" class="brand" v-on:click.prevent="showLessonsPage">
+                <span class="brand-mark">&#8963;</span>
+                <span class="brand-name" v-text="sitename"></span>
+            </a>
+            <nav class="nav-links" v-if="showLessons">
+                <a href="#lessons">Lessons</a>
+                <a href="#how">How it works</a>
+                <a href="#locations">Locations</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="theme-button" v-on:click="toggleTheme" title="Toggle theme">
+                    <i class="fa-solid fa-moon" v-if="!darkMode"></i>
+                    <i class="fa-solid fa-sun" v-else></i>
+                </button>
+                <button class="cart-button" v-on:click="toggleCart" v-bind:disabled="showLessons && cartItemCount === 0">
+                    <i class="fa-solid fa-cart-shopping" v-if="showLessons"></i>
+                    <i class="fa-solid fa-arrow-left" v-else></i>
+                    <span v-if="showLessons">Cart</span>
+                    <span v-else>Back to Lessons</span>
+                    <span class="cart-count" v-bind:class="{ bump: bumping }">{{cartItemCount}}</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="container hero" v-if="showLessons">
+            <div class="hero-text">
+                <span class="hero-badge"><span class="dot"></span> Enrol now</span>
+                <h1>After-school tech lessons,<br>taught in <em>your</em> borough.</h1>
+                <p>Small-group classes in AI, cloud, security and data across North London. Book in under a minute.</p>
+                <div class="hero-actions">
+                    <a href="#lessons" class="btn btn-accent">Browse lessons <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="#how" class="btn btn-ghost">How it works</a>
+                </div>
+            </div>
+            <div class="hero-stats">
+                <div class="stat"><strong>{{lessons.length}}</strong><span>subjects</span></div>
+                <div class="stat"><strong>{{lessons.length}}</strong><span>locations</span></div>
+                <div class="stat"><strong>5</strong><span>seats each</span></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div v-if="showLessons">
+            <section id="lessons" class="section">
+                <div class="toolbar">
+                    <div class="toolbar-title">
+                        <h2>All lessons</h2>
+                        <span>{{lessons.length}} lessons · sorted by {{sortBy === 'topic' ? 'subject' : sortBy}}, {{sortOrder === 'asc' ? 'ascending' : 'descending'}}</span>
+                    </div>
+                    <div class="sort-controls">
+                        <label for="sortBy">Sort by</label>
+                        <select id="sortBy" class="sort-select" v-model="sortBy">
+                            <option value="topic">Subject</option>
+                            <option value="location">Location</option>
+                            <option value="price">Price</option>
+                            <option value="space">Spaces</option>
+                            <option value="rating">Rating</option>
+                        </select>
+                        <div class="segmented">
+                            <input type="radio" id="asc" value="asc" v-model="sortOrder">
+                            <label for="asc"><i class="fa-solid fa-arrow-up"></i> Ascending</label>
+                            <input type="radio" id="desc" value="desc" v-model="sortOrder">
+                            <label for="desc"><i class="fa-solid fa-arrow-down"></i> Descending</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lesson-grid" v-bind:key="sortBy + sortOrder">
+                    <article class="lesson-card" v-for="(lesson, index) in sortedLessons" v-bind:key="lesson.id" v-bind:class="{ 'sold-out': lesson.space === 0 }" v-bind:style="{ animationDelay: (index * 60) + 'ms' }">
+                        <figure class="lesson-photo">
+                            <img v-bind:src="lesson.image" v-bind:alt="lesson.topic">
+                            <span class="stamp" v-if="lesson.space === 0">Sold out</span>
+                        </figure>
+                        <div class="lesson-body">
+                            <div class="lesson-top">
+                                <span class="icon-tile"><i v-bind:class="lesson.icon"></i></span>
+                                <span class="pill" v-if="lesson.space === 0">Sold out</span>
+                                <span class="pill warn" v-else-if="lesson.space < 3">Only {{lesson.space}} left</span>
+                                <span class="pill ok" v-else>{{lesson.space}} spaces</span>
+                            </div>
+                            <h3>{{lesson.topic}}</h3>
+                            <span class="location"><i class="fa-solid fa-location-dot"></i> {{lesson.location}}</span>
+                            <div class="rating">
+                                <span v-for="n in lesson.rating" v-bind:key="'on' + n"><i class="fa-solid fa-star"></i></span>
+                                <span class="off" v-for="n in 5 - lesson.rating" v-bind:key="'off' + n"><i class="fa-regular fa-star"></i></span>
+                                <small>{{lesson.rating}}.0</small>
+                            </div>
+                            <div class="seats">
+                                <div class="seat-bar">
+                                    <div class="seat-fill" v-bind:class="{ warn: lesson.space < 3 && lesson.space > 0, out: lesson.space === 0 }" v-bind:style="{ width: (lesson.space / lesson.capacity * 100) + '%' }"></div>
+                                </div>
+                                <span>{{lesson.space}} of {{lesson.capacity}} seats left</span>
+                            </div>
+                            <div class="lesson-footer">
+                                <span class="price">£{{lesson.price}}</span>
+                                <div class="cart-stepper">
+                                    <button class="btn btn-step" v-if="cartCount(lesson.id) > 0" v-on:click="removeOne(lesson)" title="Remove one">
+                                        <i class="fa-solid fa-minus"></i>
+                                    </button>
+                                    <button class="btn btn-dark" v-on:click="addToCart(lesson)" v-bind:disabled="lesson.space === 0">
+                                        <i class="fa-solid fa-plus"></i> Add to Cart
+                                        <span class="in-cart" v-if="cartCount(lesson.id) > 0">{{cartCount(lesson.id)}}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="how" class="section how">
+                <div class="section-head">
+                    <h2>How it works</h2>
+                    <span>Three steps. No account needed.</span>
+                </div>
+                <div class="steps">
+                    <div class="step-card">
+                        <span class="step-num">01</span>
+                        <span class="icon-tile"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <h3>Pick a lesson</h3>
+                        <p>Sort by subject, location, price, spaces or rating and find the class that fits.</p>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">02</span>
+                        <span class="icon-tile"><i class="fa-solid fa-cart-plus"></i></span>
+                        <h3>Add to cart</h3>
+                        <p>Each click reserves one seat. Change your mind? Remove it and the seat goes back.</p>
+                    </div>
+                    <div class="step-card">
+                        <span class="step-num">03</span>
+                        <span class="icon-tile"><i class="fa-solid fa-circle-check"></i></span>
+                        <h3>Checkout</h3>
+                        <p>Enter your name and phone, confirm, and you are booked in.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="locations" class="section locations">
+                <div class="section-head">
+                    <h2>Where we teach</h2>
+                    <span>Click a borough to sort lessons by location.</span>
+                </div>
+                <div class="chips">
+                    <a href="#lessons" class="chip" v-for="lesson in lessons" v-bind:key="lesson.id" v-on:click="sortByLocation">
+                        <i class="fa-solid fa-location-dot"></i> {{lesson.location}}
+                    </a>
+                </div>
+            </section>
+
+            <section class="section stats-band">
+                <div class="band-stat"><strong>500+</strong><span>students taught</span></div>
+                <div class="band-stat"><strong>{{lessons.length}}</strong><span>North London boroughs</span></div>
+                <div class="band-stat"><strong>4.9<i class="fa-solid fa-star"></i></strong><span>average rating</span></div>
+                <div class="band-stat"><strong>5</strong><span>seats per class</span></div>
+            </section>
+        </div>
+
+        <div v-else class="checkout-page">
+            <nav class="progress">
+                <span class="step done"><b>1</b> Cart</span>
+                <span class="bar active"></span>
+                <span class="step" v-bind:class="{ active: !orderSubmitted, done: orderSubmitted }"><b>2</b> Checkout</span>
+                <span class="bar" v-bind:class="{ active: orderSubmitted }"></span>
+                <span class="step" v-bind:class="{ active: orderSubmitted }"><b>3</b> Confirmed</span>
+            </nav>
+
+            <div class="success" v-if="orderSubmitted">
+                <span class="success-icon"><i class="fa-solid fa-check"></i></span>
+                <h1>Order submitted!</h1>
+                <p>Thank you, {{lastOrderName}}. Your {{lastOrderSeats}} {{lastOrderSeats === 1 ? 'seat is' : 'seats are'}} reserved and we will be in touch shortly.</p>
+                <button class="btn btn-accent" v-on:click="showLessonsPage"><i class="fa-solid fa-arrow-left"></i> Back to Lessons</button>
+            </div>
+
+            <div v-else>
+                <h1 class="page-title">Your cart</h1>
+                <div class="two-col">
+                    <section class="checkout-left">
+                        <div class="cart-list">
+                            <p class="empty" v-if="cart.length === 0"><i class="fa-solid fa-cart-shopping"></i> Your cart is empty.</p>
+                            <div class="cart-row" v-for="(item, index) in cart" v-bind:key="index">
+                                <figure class="cart-photo">
+                                    <img v-bind:src="item.image" v-bind:alt="item.topic">
+                                </figure>
+                                <span class="icon-tile"><i v-bind:class="item.icon"></i></span>
+                                <div class="cart-info">
+                                    <strong>{{item.topic}}</strong>
+                                    <span class="location"><i class="fa-solid fa-location-dot"></i> {{item.location}}</span>
+                                    <div class="rating">
+                                        <span v-for="n in item.rating" v-bind:key="'on' + n"><i class="fa-solid fa-star"></i></span>
+                                        <span class="off" v-for="n in 5 - item.rating" v-bind:key="'off' + n"><i class="fa-regular fa-star"></i></span>
+                                        <small>{{item.rating}}.0</small>
+                                    </div>
+                                    <span class="cart-meta">
+                                        <span class="pill" v-if="item.space === 0">Sold out</span>
+                                        <span class="pill warn" v-else-if="item.space < 3">Only {{item.space}} left</span>
+                                        <span class="pill ok" v-else>{{item.space}} spaces left</span>
+                                        <span>1 seat reserved</span>
+                                    </span>
+                                </div>
+                                <span class="cart-price">{{money(item.price)}}</span>
+                                <button class="icon-btn" v-on:click="removeFromCart(index)" title="Remove">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <form class="checkout-form" v-on:submit.prevent>
+                            <div class="form-head">
+                                <h2>Checkout</h2>
+                                <span>Names use letters only, phone uses numbers only — the button unlocks when both pass.</span>
+                            </div>
+                            <div class="fields">
+                                <div class="field">
+                                    <label for="firstName">First name</label>
+                                    <div class="input-wrap">
+                                        <input id="firstName" type="text" v-model.trim="order.firstName" v-bind:class="{ invalid: order.firstName !== '' && !validFirstName, valid: validFirstName }">
+                                        <i class="fa-solid fa-check tick" v-if="validFirstName"></i>
+                                        <i class="fa-solid fa-xmark tick bad" v-else-if="order.firstName !== ''"></i>
+                                    </div>
+                                    <span class="error" v-if="order.firstName !== '' && !validFirstName">Letters only</span>
+                                </div>
+                                <div class="field">
+                                    <label for="lastName">Last name</label>
+                                    <div class="input-wrap">
+                                        <input id="lastName" type="text" v-model.trim="order.lastName" v-bind:class="{ invalid: order.lastName !== '' && !validLastName, valid: validLastName }">
+                                        <i class="fa-solid fa-check tick" v-if="validLastName"></i>
+                                        <i class="fa-solid fa-xmark tick bad" v-else-if="order.lastName !== ''"></i>
+                                    </div>
+                                    <span class="error" v-if="order.lastName !== '' && !validLastName">Letters only</span>
+                                </div>
+                                <div class="field">
+                                    <label for="phone">Phone</label>
+                                    <div class="phone-row">
+                                        <select id="countryCode" class="code-select" v-model="order.countryCode">
+                                            <option value="+44">🇬🇧 +44</option>
+                                            <option value="+971">🇦🇪 +971</option>
+                                            <option value="+230">🇲🇺 +230</option>
+                                        </select>
+                                        <div class="input-wrap">
+                                            <input id="phone" type="text" inputmode="numeric" placeholder="7123456789" v-model.trim="order.phone" v-on:keypress="digitsOnly($event)" v-bind:class="{ invalid: order.phone !== '' && !validPhone, valid: validPhone }">
+                                            <i class="fa-solid fa-check tick" v-if="validPhone"></i>
+                                            <i class="fa-solid fa-xmark tick bad" v-else-if="order.phone !== ''"></i>
+                                        </div>
+                                    </div>
+                                    <span class="error" v-if="order.phone !== '' && !validPhone">Numbers only, 7 to 15 digits</span>
+                                </div>
+                                <div class="field">
+                                    <label for="email">Email</label>
+                                    <div class="input-wrap">
+                                        <input id="email" type="text" v-model.trim="order.email" placeholder="you@example.com" v-bind:class="{ invalid: order.email !== '' && !validEmail, valid: validEmail }">
+                                        <i class="fa-solid fa-check tick" v-if="validEmail"></i>
+                                        <i class="fa-solid fa-xmark tick bad" v-else-if="order.email !== ''"></i>
+                                    </div>
+                                    <span class="error" v-if="order.email !== '' && !validEmail">Must include @ and a domain like .com</span>
+                                </div>
+                                <div class="field">
+                                    <label for="age">Student age</label>
+                                    <div class="input-wrap">
+                                        <input id="age" type="number" min="15" max="30" placeholder="e.g. 18" v-model.number="order.age" v-on:keypress="digitsOnly($event)" v-bind:class="{ invalid: order.age !== '' && !validAge, valid: validAge }">
+                                        <i class="fa-solid fa-check tick" v-if="validAge"></i>
+                                        <i class="fa-solid fa-xmark tick bad" v-else-if="order.age !== ''"></i>
+                                    </div>
+                                    <span class="error" v-if="order.age !== '' && !validAge">Must be between 15 and 30</span>
+                                </div>
+                                <div class="field">
+                                    <label for="address">Address</label>
+                                    <div class="input-wrap">
+                                        <input id="address" type="text" v-model.trim="order.address" placeholder="Street and number" v-bind:class="{ valid: validAddress }">
+                                        <i class="fa-solid fa-check tick" v-if="validAddress"></i>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label for="country">Country</label>
+                                    <select id="country" v-model="order.country" v-on:change="fillCity" v-bind:class="{ valid: order.country !== '' }">
+                                        <option disabled value="">Country</option>
+                                        <option v-bind:value="countries.UK">England</option>
+                                        <option v-bind:value="countries.UAE">United Arab Emirates</option>
+                                        <option v-bind:value="countries.MU">Mauritius</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label for="city">City</label>
+                                    <div class="input-wrap">
+                                        <input id="city" type="text" v-model.trim="order.city" v-bind:class="{ valid: validCity }">
+                                        <i class="fa-solid fa-check tick" v-if="validCity"></i>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label for="postcode">Postcode</label>
+                                    <div class="input-wrap">
+                                        <input id="postcode" type="text" inputmode="numeric" placeholder="0000" v-model.trim="order.postcode" v-on:keypress="digitsOnly($event)" v-bind:class="{ invalid: order.postcode !== '' && !validPostcode, valid: validPostcode }">
+                                        <i class="fa-solid fa-check tick" v-if="validPostcode"></i>
+                                        <i class="fa-solid fa-xmark tick bad" v-else-if="order.postcode !== ''"></i>
+                                    </div>
+                                    <span class="error" v-if="order.postcode !== '' && !validPostcode">Numbers only, 4 to 8 digits</span>
+                                </div>
+                            </div>
+
+                            <fieldset class="payment">
+                                <legend>Payment method</legend>
+                                <label class="choice" v-bind:class="{ selected: order.payment === 'Card' }">
+                                    <input type="radio" id="card" value="Card" v-model="order.payment">
+                                    <i class="fa-solid fa-credit-card"></i> Card
+                                </label>
+                                <label class="choice" v-bind:class="{ selected: order.payment === 'Cash' }">
+                                    <input type="radio" id="cash" value="Cash" v-model="order.payment">
+                                    <i class="fa-solid fa-money-bill"></i> Cash
+                                </label>
+                            </fieldset>
+
+                            <div class="card-details" v-if="order.payment === 'Card'">
+                                <div class="fields">
+                                    <div class="field full">
+                                        <label for="cardName">Name on card</label>
+                                        <div class="input-wrap">
+                                            <input id="cardName" type="text" v-model.trim="card.name" placeholder="As printed on the card" v-bind:class="{ valid: validCardName }">
+                                            <i class="fa-solid fa-check tick" v-if="validCardName"></i>
+                                        </div>
+                                    </div>
+                                    <div class="field full">
+                                        <label for="cardNumber">Card number</label>
+                                        <div class="input-wrap">
+                                            <input id="cardNumber" type="text" inputmode="numeric" maxlength="16" placeholder="1234 5678 9012 3456" v-model.trim="card.number" v-on:keypress="digitsOnly($event)" v-bind:class="{ invalid: card.number !== '' && !validCardNumber, valid: validCardNumber }">
+                                            <i class="fa-solid fa-check tick" v-if="validCardNumber"></i>
+                                            <i class="fa-solid fa-xmark tick bad" v-else-if="card.number !== ''"></i>
+                                        </div>
+                                        <span class="error" v-if="card.number !== '' && !validCardNumber">16 digits</span>
+                                    </div>
+                                    <div class="field">
+                                        <label for="cardExpiry">Expiry (MM/YY)</label>
+                                        <div class="input-wrap">
+                                            <input id="cardExpiry" type="text" maxlength="5" placeholder="08/28" v-model.trim="card.expiry" v-bind:class="{ invalid: card.expiry !== '' && !validCardExpiry, valid: validCardExpiry }">
+                                            <i class="fa-solid fa-check tick" v-if="validCardExpiry"></i>
+                                            <i class="fa-solid fa-xmark tick bad" v-else-if="card.expiry !== ''"></i>
+                                        </div>
+                                        <span class="error" v-if="card.expiry !== '' && !validCardExpiry">Use MM/YY</span>
+                                    </div>
+                                    <div class="field">
+                                        <label for="cardCvv">CVV</label>
+                                        <div class="input-wrap">
+                                            <input id="cardCvv" type="password" inputmode="numeric" maxlength="3" placeholder="123" v-model.trim="card.cvv" v-on:keypress="digitsOnly($event)" v-bind:class="{ invalid: card.cvv !== '' && !validCardCvv, valid: validCardCvv }">
+                                            <i class="fa-solid fa-check tick" v-if="validCardCvv"></i>
+                                            <i class="fa-solid fa-xmark tick bad" v-else-if="card.cvv !== ''"></i>
+                                        </div>
+                                        <span class="error" v-if="card.cvv !== '' && !validCardCvv">3 digits</span>
+                                    </div>
+                                </div>
+                                <p class="note"><i class="fa-solid fa-shield-halved"></i> Demo checkout - card details are never sent or stored.</p>
+                            </div>
+
+                            <label class="check">
+                                <input type="checkbox" id="newsletter" v-model="order.newsletter">
+                                Send me updates about new lessons
+                            </label>
+                        </form>
+                    </section>
+
+                    <aside class="summary">
+                        <h2>Order summary</h2>
+                        <div class="summary-lines">
+                            <div><span>Name</span><span>{{order.firstName}} {{order.lastName}}</span></div>
+                            <div><span>Phone</span><span>{{order.phone !== '' ? order.countryCode + ' ' + order.phone : ''}}</span></div>
+                            <div><span>Email</span><span>{{order.email}}</span></div>
+                            <div><span>Student age</span><span>{{order.age}}</span></div>
+                            <div><span>Address</span><span>{{order.address}}</span></div>
+                            <div><span>Country</span><span>{{order.country}}</span></div>
+                            <div><span>City</span><span>{{order.city}}</span></div>
+                            <div><span>Postcode</span><span>{{order.postcode}}</span></div>
+                            <div><span>Currency</span><span>{{order.currency}}</span></div>
+                            <div><span>Payment</span><span>{{order.payment}}</span></div>
+                            <div><span>Updates</span><span>{{order.newsletter ? 'Yes' : 'No'}}</span></div>
+                            <div><span>Lessons</span><span>{{cartItemCount}}</span></div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="total"><span>Total</span><strong>{{money(cartTotal)}}</strong></div>
+                        <button class="btn btn-accent btn-block" v-on:click="submitOrder" v-bind:disabled="!validOrder">
+                            <i class="fa-solid fa-lock" v-if="!validOrder"></i>
+                            <i class="fa-solid fa-lock-open" v-else></i>
+                            <span v-if="!validOrder">Enter name and phone to unlock</span>
+                            <span v-else>Checkout · {{money(cartTotal)}}</span>
+                        </button>
+                        <p class="hint" v-if="validOrder && !formComplete"><i class="fa-solid fa-circle-info"></i> Some fields are still empty or invalid.</p>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="brand" v-on:click.prevent="showLessonsPage">
+                    <span class="brand-mark">&#8963;</span>
+                    <span class="brand-name" v-text="sitename"></span>
+                </a>
+                <p>After-school IT lessons for the next generation of developers, analysts and engineers.</p>
+                <div class="social">
+                    <a href="https://github.com/Littlemoongirl/after-school-frontend" title="GitHub" target="_blank"><i class="fa-brands fa-github"></i> GitHub</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Subjects</h4>
+                <a href="#lessons" v-for="lesson in lessons.slice(0, 6)" v-bind:key="lesson.id" v-on:click="showLessonsPage">{{lesson.topic}}</a>
+            </div>
+            <div class="footer-col">
+                <h4>Locations</h4>
+                <a href="#locations" v-for="lesson in lessons.slice(6, 12)" v-bind:key="lesson.id" v-on:click="showLessonsPage">{{lesson.location}}</a>
+            </div>
+            <div class="footer-col">
+                <h4>Contact</h4>
+                <a href="mailto:hello@ctrllearn.co.uk"><i class="fa-solid fa-envelope"></i> hello@ctrllearn.co.uk</a>
+                <a href="tel:+442012340000"><i class="fa-solid fa-phone"></i> 020 1234 000</a>
+                <a href="https://www.google.com/maps/search/?api=1&query=The+Burroughs,+Hendon,+London" target="_blank"><i class="fa-solid fa-location-dot"></i> The Burroughs, Hendon, London</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <span>© 2026 Ctrl+Learn · Middlesex University coursework</span>
+            <span>Vue.js front end · Express + MongoDB back end</span>
+        </div>
+    </footer>
+
+    <div class="toast" v-bind:class="{ show: toast !== '' }">
+        <i class="fa-solid fa-circle-check"></i> {{toast}}
+    </div>
+</div>
+
+<script>
+    let app = new Vue({
+        el: '#app',
+        data: {
+            sitename: 'Ctrl+Learn',
+            lessons: lessons,
+            cart: [],
+            showLessons: true,
+            sortBy: 'topic',
+            sortOrder: 'asc',
+            darkMode: false,
+            toast: '',
+            bumping: false,
+            countries: {
+                UK: 'England',
+                UAE: 'United Arab Emirates',
+                MU: 'Mauritius'
+            },
+            cities: {
+                'England': 'London',
+                'United Arab Emirates': 'Dubai',
+                'Mauritius': 'Flic en Flac'
+            },
+            codes: {
+                'England': '+44',
+                'United Arab Emirates': '+971',
+                'Mauritius': '+230'
+            },
+            currencies: {
+                'England': { code: 'GBP', symbol: '£', rate: 1 },
+                'United Arab Emirates': { code: 'AED', symbol: 'AED ', rate: 4.7 },
+                'Mauritius': { code: 'MUR', symbol: 'Rs ', rate: 58 }
+            },
+            card: {
+                name: '',
+                number: '',
+                expiry: '',
+                cvv: ''
+            },
+            order: {
+                firstName: '',
+                lastName: '',
+                countryCode: '+44',
+                phone: '',
+                email: '',
+                age: '',
+                address: '',
+                country: '',
+                city: '',
+                postcode: '',
+                currency: 'GBP',
+                payment: 'Card',
+                newsletter: false
+            },
+            orderSubmitted: false,
+            lastOrderName: '',
+            lastOrderSeats: 0
+        },
+        methods: {
+            addToCart(lesson) {
+                if (lesson.space > 0) {
+                    this.cart.push(lesson);
+                    lesson.space = lesson.space - 1;
+                    this.showToast(lesson.topic + ' added to cart');
+                }
+            },
+            removeFromCart(index) {
+                let lesson = this.cart[index];
+                lesson.space = lesson.space + 1;
+                this.cart.splice(index, 1);
+                this.showToast(lesson.topic + ' removed from cart');
+            },
+            removeOne(lesson) {
+                let index = this.cart.indexOf(lesson);
+                if (index !== -1) {
+                    this.removeFromCart(index);
+                }
+            },
+            cartCount(id) {
+                let count = 0;
+                for (let i = 0; i < this.cart.length; i++) {
+                    if (this.cart[i].id === id) {
+                        count++;
+                    }
+                }
+                return count;
+            },
+            showToast(message) {
+                this.toast = message;
+                this.bumping = true;
+                setTimeout(() => {
+                    this.toast = '';
+                    this.bumping = false;
+                }, 1800);
+            },
+            fillCity() {
+                this.order.city = this.cities[this.order.country];
+                this.order.countryCode = this.codes[this.order.country];
+                this.order.currency = this.currencies[this.order.country].code;
+            },
+            money(amount) {
+                let currency = this.currencies[this.order.country] || this.currencies['England'];
+                return currency.symbol + Math.round(amount * currency.rate);
+            },
+            digitsOnly(event) {
+                if (!/[0-9]/.test(event.key)) {
+                    event.preventDefault();
+                }
+            },
+            toggleCart() {
+                this.showLessons = this.showLessons ? false : true;
+                this.orderSubmitted = false;
+            },
+            showLessonsPage() {
+                this.showLessons = true;
+                this.orderSubmitted = false;
+            },
+            toggleTheme() {
+                this.darkMode = this.darkMode ? false : true;
+            },
+            sortByLocation() {
+                this.sortBy = 'location';
+            },
+            submitOrder() {
+                this.lastOrderName = this.order.firstName;
+                this.lastOrderSeats = this.cart.length;
+                this.orderSubmitted = true;
+                this.cart = [];
+                this.order.firstName = '';
+                this.order.lastName = '';
+                this.order.countryCode = '+44';
+                this.order.phone = '';
+                this.order.email = '';
+                this.order.age = '';
+                this.order.address = '';
+                this.order.country = '';
+                this.order.city = '';
+                this.order.postcode = '';
+                this.order.currency = 'GBP';
+                this.order.payment = 'Card';
+                this.order.newsletter = false;
+                this.card.name = '';
+                this.card.number = '';
+                this.card.expiry = '';
+                this.card.cvv = '';
+            }
+        },
+        computed: {
+            cartItemCount() {
+                return this.cart.length;
+            },
+            cartTotal() {
+                let total = 0;
+                for (let i = 0; i < this.cart.length; i++) {
+                    total = total + this.cart[i].price;
+                }
+                return total;
+            },
+            sortedLessons() {
+                let attribute = this.sortBy;
+                let direction = this.sortOrder === 'asc' ? 1 : -1;
+                function compare(a, b) {
+                    if (a[attribute] > b[attribute]) return 1 * direction;
+                    if (a[attribute] < b[attribute]) return -1 * direction;
+                    return 0;
+                }
+                return this.lessons.slice().sort(compare);
+            },
+            validFirstName() {
+                return /^[A-Za-z]+$/.test(this.order.firstName);
+            },
+            validLastName() {
+                return /^[A-Za-z]+$/.test(this.order.lastName);
+            },
+            validPhone() {
+                return /^[0-9]{7,15}$/.test(this.order.phone);
+            },
+            validEmail() {
+                return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(this.order.email);
+            },
+            validAge() {
+                return typeof this.order.age === 'number' && this.order.age >= 15 && this.order.age <= 30;
+            },
+            validAddress() {
+                return this.order.address.length > 0;
+            },
+            validCity() {
+                return this.order.city.length > 0;
+            },
+            validPostcode() {
+                return /^[0-9]{4,8}$/.test(this.order.postcode);
+            },
+            validCardName() {
+                return /^[A-Za-z ]+$/.test(this.card.name);
+            },
+            validCardNumber() {
+                return /^[0-9]{16}$/.test(this.card.number);
+            },
+            validCardExpiry() {
+                return /^(0[1-9]|1[0-2])\/[0-9]{2}$/.test(this.card.expiry);
+            },
+            validCardCvv() {
+                return /^[0-9]{3}$/.test(this.card.cvv);
+            },
+            formComplete() {
+                return this.validEmail && this.validAge && this.validAddress && this.order.country !== '' && this.validCity && this.validPostcode;
+            },
+            validOrder() {
+                return this.validFirstName && this.validLastName && this.validPhone && this.cart.length > 0;
+            }
+        }
+    });
+</script>
+</body>
+</html>
