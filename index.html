@@ -68,9 +68,16 @@
                 <div class="toolbar">
                     <div class="toolbar-title">
                         <h2>All lessons</h2>
-                        <span>{{lessons.length}} lessons · sorted by {{sortBy === 'topic' ? 'subject' : sortBy}}, {{sortOrder === 'asc' ? 'ascending' : 'descending'}}</span>
+                        <span>{{sortedLessons.length}} of {{lessons.length}} lessons · sorted by {{sortBy === 'topic' ? 'subject' : sortBy}}, {{sortOrder === 'asc' ? 'ascending' : 'descending'}}</span>
                     </div>
                     <div class="sort-controls">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input id="search" type="text" placeholder="Search subject or location" v-model.trim="searchTerm">
+                            <button class="clear-search" v-if="searchTerm !== ''" v-on:click="searchTerm = ''" title="Clear">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
                         <label for="sortBy">Sort by</label>
                         <select id="sortBy" class="sort-select" v-model="sortBy">
                             <option value="topic">Subject</option>
@@ -88,6 +95,7 @@
                     </div>
                 </div>
 
+                <p class="empty" v-if="sortedLessons.length === 0"><i class="fa-solid fa-magnifying-glass"></i> No lessons match "{{searchTerm}}"</p>
                 <div class="lesson-grid" v-bind:key="sortBy + sortOrder">
                     <article class="lesson-card" v-for="(lesson, index) in sortedLessons" v-bind:key="lesson.id" v-bind:class="{ 'sold-out': lesson.space === 0 }" v-bind:style="{ animationDelay: (index * 60) + 'ms' }">
                         <figure class="lesson-photo">
@@ -455,6 +463,7 @@
             lessons: lessons,
             cart: [],
             showLessons: true,
+            searchTerm: '',
             sortBy: 'topic',
             sortOrder: 'asc',
             darkMode: false,
@@ -608,12 +617,16 @@
             sortedLessons() {
                 let attribute = this.sortBy;
                 let direction = this.sortOrder === 'asc' ? 1 : -1;
+                let term = this.searchTerm.toLowerCase();
+                function matches(lesson) {
+                    return lesson.topic.toLowerCase().includes(term) || lesson.location.toLowerCase().includes(term);
+                }
                 function compare(a, b) {
                     if (a[attribute] > b[attribute]) return 1 * direction;
                     if (a[attribute] < b[attribute]) return -1 * direction;
                     return 0;
                 }
-                return this.lessons.slice().sort(compare);
+                return this.lessons.filter(matches).sort(compare);
             },
             validFirstName() {
                 return /^[A-Za-z]+$/.test(this.order.firstName);

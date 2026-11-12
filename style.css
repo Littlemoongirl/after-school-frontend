@@ -1935,3 +1935,65 @@ body {
 #app.dark .card-details {
     background: #10141B;
 }
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-box > i {
+    position: absolute;
+    left: 14px;
+    color: var(--muted-2);
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.search-box input {
+    width: 260px;
+    padding: 10px 40px 10px 38px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: var(--card);
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    min-height: 44px;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(58, 91, 255, .15);
+}
+
+.clear-search {
+    position: absolute;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 0;
+    background: transparent;
+    color: var(--muted-2);
+    cursor: pointer;
+    transition: background .2s, color .2s;
+}
+
+.clear-search:hover {
+    background: var(--red-soft);
+    color: var(--red-text);
+}
+
+#app.dark .search-box input {
+    color: #F4F5F7;
+}
+
+@media (max-width: 640px) {
+    .search-box,
+    .search-box input {
+        width: 100%;
+    }
+}
