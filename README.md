@@ -6,4 +6,4 @@
 
 ## Express.js App (Back-End)
 - GitHub Repository: https://github.com/Littlemoongirl/after-school-backend
-- Lessons route (render.com): https://m00974848-after-school.onrender.com/lessons
+- Lessons route (render.com): https://m00974848-after-school-backend.onrender.com/lessons
