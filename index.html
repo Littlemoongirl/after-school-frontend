@@ -472,6 +472,7 @@
             cart: [],
             showLessons: true,
             searchTerm: '',
+            searchResults: [],
             sortBy: 'topic',
             sortOrder: 'asc',
             darkMode: false,
@@ -521,6 +522,19 @@
             orderSubmitted: false,
             lastOrderName: '',
             lastOrderSeats: 0
+        },
+        watch: {
+            searchTerm(term) {
+                if (term === '') {
+                    this.searchResults = [];
+                    return;
+                }
+                fetch(this.serverUrl + '/search?q=' + encodeURIComponent(term))
+                    .then(response => response.json())
+                    .then(data => {
+                        this.searchResults = data.map(lesson => lesson.id);
+                    });
+            }
         },
         created() {
             fetch(this.serverUrl + '/lessons')
@@ -693,6 +707,7 @@
                 let term = this.searchTerm.toLowerCase();
                 let teacherId = this.selectedTeacher;
                 let teacherName = this.teacherName;
+                let searchResults = this.searchResults;
                 let teacherLessonIDs = [];
                 for (let i = 0; i < this.teachers.length; i++) {
                     if (this.teachers[i].id === teacherId) {
@@ -703,11 +718,11 @@
                     if (teacherId !== '' && !teacherLessonIDs.includes(lesson.id)) {
                         return false;
                     }
-                    return lesson.topic.toLowerCase().includes(term) ||
-                        lesson.location.toLowerCase().includes(term) ||
-                        teacherName(lesson.id).toLowerCase().includes(term) ||
-                        String(lesson.price).includes(term) ||
-                        String(lesson.space).includes(term);
+                    if (term === '') {
+                        return true;
+                    }
+                    return searchResults.includes(lesson.id) ||
+                        teacherName(lesson.id).toLowerCase().includes(term);
                 }
                 function startsWithTerm(lesson) {
                     return lesson.topic.toLowerCase().startsWith(term) ||
