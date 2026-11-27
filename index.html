@@ -608,10 +608,55 @@
                 return 'TBA';
             },
             submitOrder() {
-                this.lastOrderName = this.order.firstName;
-                this.lastOrderSeats = this.cart.length;
-                this.orderSubmitted = true;
-                this.cart = [];
+                let order = {
+                    name: this.order.firstName + ' ' + this.order.lastName,
+                    phone: this.order.countryCode + this.order.phone,
+                    email: this.order.email,
+                    age: this.order.age,
+                    address: this.order.address,
+                    country: this.order.country,
+                    city: this.order.city,
+                    postcode: this.order.postcode,
+                    currency: this.order.currency,
+                    payment: this.order.payment,
+                    newsletter: this.order.newsletter,
+                    lessonIDs: this.cart.map(item => item.id),
+                    space: this.cart.length,
+                    total: this.cartTotal
+                };
+                fetch(this.serverUrl + '/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(order)
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        this.updateSpaces();
+                        this.lastOrderName = this.order.firstName;
+                        this.lastOrderSeats = this.cart.length;
+                        this.orderSubmitted = true;
+                        this.cart = [];
+                        this.resetForm();
+                    });
+            },
+            updateSpaces() {
+                let updated = [];
+                this.cart.forEach(item => {
+                    if (!updated.includes(item._id)) {
+                        updated.push(item._id);
+                        fetch(this.serverUrl + '/lessons/' + item._id, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ space: item.space })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log(item.topic + ' spaces updated: ' + data.msg);
+                            });
+                    }
+                });
+            },
+            resetForm() {
                 this.order.firstName = '';
                 this.order.lastName = '';
                 this.order.countryCode = '+44';
