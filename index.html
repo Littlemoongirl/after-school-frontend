@@ -365,7 +365,7 @@
                                     <div class="field">
                                         <label for="cardExpiry">Expiry (MM/YY)</label>
                                         <div class="input-wrap">
-                                            <input id="cardExpiry" type="text" maxlength="5" placeholder="08/28" v-model.trim="card.expiry" v-bind:class="{ invalid: card.expiry !== '' && !validCardExpiry, valid: validCardExpiry }">
+                                            <input id="cardExpiry" type="text" inputmode="numeric" maxlength="5" placeholder="08/28" v-model.trim="card.expiry" v-on:input="formatExpiry" v-bind:class="{ invalid: card.expiry !== '' && !validCardExpiry, valid: validCardExpiry }">
                                             <i class="fa-solid fa-check tick" v-if="validCardExpiry"></i>
                                             <i class="fa-solid fa-xmark tick bad" v-else-if="card.expiry !== ''"></i>
                                         </div>
@@ -593,6 +593,14 @@
             money(amount) {
                 let currency = this.currencies[this.order.country] || this.currencies['England'];
                 return currency.symbol + Math.round(amount * currency.rate);
+            },
+            formatExpiry() {
+                let digits = this.card.expiry.replace(/[^0-9]/g, '').slice(0, 4);
+                if (digits.length > 2) {
+                    this.card.expiry = digits.slice(0, 2) + '/' + digits.slice(2);
+                } else {
+                    this.card.expiry = digits;
+                }
             },
             digitsOnly(event) {
                 if (!/[0-9]/.test(event.key)) {
