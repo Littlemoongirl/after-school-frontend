@@ -619,9 +619,20 @@
                 let direction = this.sortOrder === 'asc' ? 1 : -1;
                 let term = this.searchTerm.toLowerCase();
                 function matches(lesson) {
-                    return lesson.topic.toLowerCase().includes(term) || lesson.location.toLowerCase().includes(term);
+                    return lesson.topic.toLowerCase().includes(term) ||
+                        lesson.location.toLowerCase().includes(term) ||
+                        String(lesson.price).includes(term) ||
+                        String(lesson.space).includes(term);
+                }
+                function startsWithTerm(lesson) {
+                    return lesson.topic.toLowerCase().startsWith(term) ||
+                        lesson.location.toLowerCase().startsWith(term);
                 }
                 function compare(a, b) {
+                    if (term !== '') {
+                        if (startsWithTerm(a) && !startsWithTerm(b)) return -1;
+                        if (!startsWithTerm(a) && startsWithTerm(b)) return 1;
+                    }
                     if (a[attribute] > b[attribute]) return 1 * direction;
                     if (a[attribute] < b[attribute]) return -1 * direction;
                     return 0;
