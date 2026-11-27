@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="lessons.js"></script>
+    <script src="teachers.js"></script>
 </head>
 <body>
 <div id="app" v-bind:class="{ dark: darkMode }">
@@ -73,11 +74,16 @@
                     <div class="sort-controls">
                         <div class="search-box">
                             <i class="fa-solid fa-magnifying-glass"></i>
-                            <input id="search" type="text" placeholder="Search subject or location" v-model.trim="searchTerm">
+                            <input id="search" type="text" placeholder="Search subject, location or teacher" v-model.trim="searchTerm">
                             <button class="clear-search" v-if="searchTerm !== ''" v-on:click="searchTerm = ''" title="Clear">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
+                        <label for="teacher">Teacher</label>
+                        <select id="teacher" class="sort-select" v-model="selectedTeacher">
+                            <option value="">All teachers</option>
+                            <option v-for="teacher in teachers" v-bind:key="teacher.id" v-bind:value="teacher.id">{{teacher.firstName}} {{teacher.lastName}}</option>
+                        </select>
                         <label for="sortBy">Sort by</label>
                         <select id="sortBy" class="sort-select" v-model="sortBy">
                             <option value="topic">Subject</option>
@@ -95,7 +101,7 @@
                     </div>
                 </div>
 
-                <p class="empty" v-if="sortedLessons.length === 0"><i class="fa-solid fa-magnifying-glass"></i> No lessons match "{{searchTerm}}"</p>
+                <p class="empty" v-if="sortedLessons.length === 0"><i class="fa-solid fa-magnifying-glass"></i> No lessons match your search</p>
                 <div class="lesson-grid" v-bind:key="sortBy + sortOrder">
                     <article class="lesson-card" v-for="(lesson, index) in sortedLessons" v-bind:key="lesson.id" v-bind:class="{ 'sold-out': lesson.space === 0 }" v-bind:style="{ animationDelay: (index * 60) + 'ms' }">
                         <figure class="lesson-photo">
@@ -111,6 +117,7 @@
                             </div>
                             <h3>{{lesson.topic}}</h3>
                             <span class="location"><i class="fa-solid fa-location-dot"></i> {{lesson.location}}</span>
+                            <span class="teacher"><i class="fa-solid fa-chalkboard-user"></i> {{teacherName(lesson.id)}}</span>
                             <div class="rating">
                                 <span v-for="n in lesson.rating" v-bind:key="'on' + n"><i class="fa-solid fa-star"></i></span>
                                 <span class="off" v-for="n in 5 - lesson.rating" v-bind:key="'off' + n"><i class="fa-regular fa-star"></i></span>
@@ -461,6 +468,8 @@
         data: {
             sitename: 'Ctrl+Learn',
             lessons: lessons,
+            teachers: teachers,
+            selectedTeacher: '',
             cart: [],
             showLessons: true,
             searchTerm: '',
@@ -579,6 +588,14 @@
             sortByLocation() {
                 this.sortBy = 'location';
             },
+            teacherName(lessonId) {
+                for (let i = 0; i < this.teachers.length; i++) {
+                    if (this.teachers[i].lessonIDs.includes(lessonId)) {
+                        return this.teachers[i].firstName + ' ' + this.teachers[i].lastName;
+                    }
+                }
+                return 'TBA';
+            },
             submitOrder() {
                 this.lastOrderName = this.order.firstName;
                 this.lastOrderSeats = this.cart.length;
@@ -618,15 +635,28 @@
                 let attribute = this.sortBy;
                 let direction = this.sortOrder === 'asc' ? 1 : -1;
                 let term = this.searchTerm.toLowerCase();
+                let teacherId = this.selectedTeacher;
+                let teacherName = this.teacherName;
+                let teacherLessonIDs = [];
+                for (let i = 0; i < this.teachers.length; i++) {
+                    if (this.teachers[i].id === teacherId) {
+                        teacherLessonIDs = this.teachers[i].lessonIDs;
+                    }
+                }
                 function matches(lesson) {
+                    if (teacherId !== '' && !teacherLessonIDs.includes(lesson.id)) {
+                        return false;
+                    }
                     return lesson.topic.toLowerCase().includes(term) ||
                         lesson.location.toLowerCase().includes(term) ||
+                        teacherName(lesson.id).toLowerCase().includes(term) ||
                         String(lesson.price).includes(term) ||
                         String(lesson.space).includes(term);
                 }
                 function startsWithTerm(lesson) {
                     return lesson.topic.toLowerCase().startsWith(term) ||
-                        lesson.location.toLowerCase().startsWith(term);
+                        lesson.location.toLowerCase().startsWith(term) ||
+                        teacherName(lesson.id).toLowerCase().startsWith(term);
                 }
                 function compare(a, b) {
                     if (term !== '') {

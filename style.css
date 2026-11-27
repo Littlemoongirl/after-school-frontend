@@ -1951,7 +1951,7 @@ body {
 }
 
 .search-box input {
-    width: 260px;
+    width: 300px;
     padding: 10px 40px 10px 38px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--line);
@@ -1996,4 +1996,17 @@ body {
     .search-box input {
         width: 100%;
     }
+}
+
+.teacher {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: -8px;
+}
+
+.teacher i {
+    color: var(--accent);
 }
