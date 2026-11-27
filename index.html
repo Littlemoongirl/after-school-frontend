@@ -11,8 +11,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="lessons.js"></script>
-    <script src="teachers.js"></script>
 </head>
 <body>
 <div id="app" v-bind:class="{ dark: darkMode }">
@@ -105,7 +103,7 @@
                 <div class="lesson-grid" v-bind:key="sortBy + sortOrder">
                     <article class="lesson-card" v-for="(lesson, index) in sortedLessons" v-bind:key="lesson.id" v-bind:class="{ 'sold-out': lesson.space === 0 }" v-bind:style="{ animationDelay: (index * 60) + 'ms' }">
                         <figure class="lesson-photo">
-                            <img v-bind:src="lesson.image" v-bind:alt="lesson.topic">
+                            <img v-bind:src="serverUrl + '/' + lesson.image" v-bind:alt="lesson.topic">
                             <span class="stamp" v-if="lesson.space === 0">Sold out</span>
                         </figure>
                         <div class="lesson-body">
@@ -217,7 +215,7 @@
                             <p class="empty" v-if="cart.length === 0"><i class="fa-solid fa-cart-shopping"></i> Your cart is empty.</p>
                             <div class="cart-row" v-for="(item, index) in cart" v-bind:key="index">
                                 <figure class="cart-photo">
-                                    <img v-bind:src="item.image" v-bind:alt="item.topic">
+                                    <img v-bind:src="serverUrl + '/' + item.image" v-bind:alt="item.topic">
                                 </figure>
                                 <span class="icon-tile"><i v-bind:class="item.icon"></i></span>
                                 <div class="cart-info">
@@ -467,8 +465,9 @@
         el: '#app',
         data: {
             sitename: 'Ctrl+Learn',
-            lessons: lessons,
-            teachers: teachers,
+            serverUrl: 'https://m00974848-after-school-backend.onrender.com',
+            lessons: [],
+            teachers: [],
             selectedTeacher: '',
             cart: [],
             showLessons: true,
@@ -522,6 +521,18 @@
             orderSubmitted: false,
             lastOrderName: '',
             lastOrderSeats: 0
+        },
+        created() {
+            fetch(this.serverUrl + '/lessons')
+                .then(response => response.json())
+                .then(data => {
+                    this.lessons = data;
+                });
+            fetch(this.serverUrl + '/teachers')
+                .then(response => response.json())
+                .then(data => {
+                    this.teachers = data;
+                });
         },
         methods: {
             addToCart(lesson) {
